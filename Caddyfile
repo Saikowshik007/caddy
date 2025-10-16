@@ -12,26 +12,7 @@ jobtrackai.duckdns.org {
         respond 204
     }
 
-    # JobTrak API endpoints (microservice 2)
-    handle /api/* {
-        # Add CORS headers to all responses
-        header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-        header Access-Control-Allow-Headers "*"
-        header Access-Control-Allow-Credentials "true"
-        header Access-Control-Expose-Headers "*"
-
-        # Load balance across 3 API instances
-        reverse_proxy jobtrak-api-1:8000 jobtrak-api-2:8000 jobtrak-api-3:8000 {
-            lb_policy round_robin
-            health_uri /health
-            health_interval 30s
-            health_timeout 10s
-            health_status 2xx
-        }
-    }
-
-    # Learning Platform endpoints (microservice 1)
+    # Learning Platform endpoints - KEEP /learn prefix (Flask expects it!)
     handle /learn/* {
         # Add CORS headers
         header Access-Control-Allow-Origin "*"
@@ -40,8 +21,21 @@ jobtrackai.duckdns.org {
         header Access-Control-Allow-Credentials "true"
         header Access-Control-Expose-Headers "*"
 
-        # Reverse proxy to learning backend
+        # Forward to learning backend WITH /learn prefix
         reverse_proxy learning-platform-backend:5000
+    }
+
+    # JobTrak API endpoints (microservice 2)
+    handle /api/* {
+        # Add CORS headers
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+        header Access-Control-Allow-Headers "*"
+        header Access-Control-Allow-Credentials "true"
+        header Access-Control-Expose-Headers "*"
+
+        # Load balance across 3 API instances
+        reverse_proxy jobtrak-api-1:8000 jobtrak-api-2:8000 jobtrak-api-3:8000
     }
 
     # Root endpoint
@@ -50,7 +44,7 @@ jobtrackai.duckdns.org {
         respond "JobTrak Services Running" 200
     }
 
-    # Health check aggregation endpoint
+    # Health check endpoint
     handle /health {
         header Access-Control-Allow-Origin "*"
         reverse_proxy jobtrak-api-1:8000
