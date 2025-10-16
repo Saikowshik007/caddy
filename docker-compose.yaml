@@ -1,0 +1,33 @@
+# Standalone Caddy Gateway
+# This runs separately and routes to both microservices
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy:latest
+    container_name: unified-caddy-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - my-network
+
+networks:
+  # Single shared network for all services
+  my-network:
+    external: true
+    name: my-network
+
+volumes:
+  caddy_data:
+    driver: local
+    name: unified-caddy-data
+  caddy_config:
+    driver: local
+    name: unified-caddy-config
