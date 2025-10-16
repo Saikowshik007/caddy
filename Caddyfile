@@ -1,24 +1,29 @@
 jobtrackai.duckdns.org {
     # Automatic HTTPS with Let's Encrypt
 
+    # Handle OPTIONS preflight globally
+    @options method OPTIONS
+    handle @options {
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+        header Access-Control-Allow-Headers "*"
+        header Access-Control-Allow-Credentials "true"
+        header Access-Control-Max-Age "3600"
+        respond 204
+    }
+
     # JobTrak API endpoints (microservice 2)
     handle /api/* {
-        # CORS headers for API
-        header {
-            Access-Control-Allow-Origin "https://job-agent-ui.vercel.app https://streaming-service.vercel.app https://jobtrackai.duckdns.org http://localhost:3000"
-            Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-            Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-Api-Key, x-api-key, Range, Accept"
-            Access-Control-Allow-Credentials "true"
-            Access-Control-Expose-Headers "Content-Length, Content-Range, X-Total-Count"
-            Access-Control-Max-Age "3600"
-        }
+        # Add CORS headers to all responses
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+        header Access-Control-Allow-Headers "*"
+        header Access-Control-Allow-Credentials "true"
+        header Access-Control-Expose-Headers "*"
 
         # Load balance across 3 API instances
-        reverse_proxy {
-            to jobtrak-api-1:8000 jobtrak-api-2:8000 jobtrak-api-3:8000
+        reverse_proxy jobtrak-api-1:8000 jobtrak-api-2:8000 jobtrak-api-3:8000 {
             lb_policy round_robin
-
-            # Health checks
             health_uri /health
             health_interval 30s
             health_timeout 10s
@@ -28,15 +33,12 @@ jobtrackai.duckdns.org {
 
     # Learning Platform endpoints (microservice 1)
     handle /learn/* {
-        # CORS headers for learning platform
-        header {
-            Access-Control-Allow-Origin "https://streaming-service.vercel.app https://jobtrackai.duckdns.org http://localhost:3000"
-            Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-            Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Range, Accept"
-            Access-Control-Allow-Credentials "true"
-            Access-Control-Expose-Headers "Content-Length, Content-Range, Accept-Ranges"
-            Access-Control-Max-Age "3600"
-        }
+        # Add CORS headers
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+        header Access-Control-Allow-Headers "*"
+        header Access-Control-Allow-Credentials "true"
+        header Access-Control-Expose-Headers "*"
 
         # Reverse proxy to learning backend
         reverse_proxy learning-platform-backend:5000
@@ -44,11 +46,13 @@ jobtrackai.duckdns.org {
 
     # Root endpoint
     handle / {
+        header Access-Control-Allow-Origin "*"
         respond "JobTrak Services Running" 200
     }
 
     # Health check aggregation endpoint
     handle /health {
+        header Access-Control-Allow-Origin "*"
         reverse_proxy jobtrak-api-1:8000
     }
 }
