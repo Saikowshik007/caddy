@@ -1,6 +1,5 @@
 # Standalone Caddy Gateway
 # This runs separately and routes to both microservices
-version: '3.8'
 
 services:
   caddy:
@@ -19,9 +18,9 @@ services:
       - my-network
 
 networks:
-  # Single shared network for all services
   my-network:
-    external: true
+    # Remove "external: true" to let Docker create it
+    driver: bridge
     name: my-network
 
 volumes:
