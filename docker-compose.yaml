@@ -1,32 +1,70 @@
-# Standalone Caddy Gateway
-# This runs separately and routes to both microservices
+# Shared Infrastructure Services
+# Run this first: docker compose up -d
+# All apps connect to 'infra-network' to use these services
 
 services:
+  postgres:
+    image: postgres:15
+    container_name: infra-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - infra-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: infra-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - infra-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   caddy:
     image: caddy:latest
-    container_name: unified-caddy-gateway
+    container_name: infra-caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
-      - "443:443/udp"  # HTTP/3
+      - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - my-network
+      - infra-network
 
 networks:
-  my-network:
-    # Remove "external: true" to let Docker create it
+  infra-network:
     driver: bridge
-    name: my-network
+    name: infra-network
 
 volumes:
+  postgres_data:
+    name: infra-postgres-data
+  redis_data:
+    name: infra-redis-data
   caddy_data:
-    driver: local
-    name: unified-caddy-data
+    name: infra-caddy-data
   caddy_config:
-    driver: local
-    name: unified-caddy-config
+    name: infra-caddy-config
