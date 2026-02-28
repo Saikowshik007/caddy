@@ -1,27 +1,23 @@
 jobtrackai.duckdns.org {
-    # No global OPTIONS handler. Let Flask-CORS answer preflight.
-
-    # Learning Platform endpoints - KEEP /learn prefix (Flask expects it!)
-    handle /learn/* {
-        # No header directives here (no CORS at proxy layer)
-        reverse_proxy learning-platform-backend:5000
-    }
-
-    # JobTrak API endpoints (microservice 2)
+    # JobTrak API endpoints
     handle /api/* {
-        # No CORS headers here either
-        reverse_proxy jobtrak-api-1:8000 jobtrak-api-2:8000 jobtrak-api-3:8000
-    }
-
-    # Root endpoint
-    handle / {
-        # No CORS headers
-        respond "JobTrak Services Running" 200
+        # Updated to match the container name in your docker-compose.yml
+        reverse_proxy jobtrak-api:8000
     }
 
     # Health check endpoint
     handle /health {
-        # No CORS headers
-        reverse_proxy jobtrak-api-1:8000
+        # Updated to match the container name
+        reverse_proxy jobtrak-api:8000
+    }
+
+    # Learning Platform endpoints (existing)
+    handle /learn/* {
+        reverse_proxy learning-platform-backend:5000
+    }
+
+    # Root endpoint
+    handle / {
+        respond "JobTrak Services Running" 200
     }
 }
